@@ -3,6 +3,7 @@ import grab
 import time
 import logging
 import xlsxwriter
+import progressbar
 
 
 logging.basicConfig(filename = 'agroserver.log', format = '%(asctime)s %(levelname)s %(message)s', level = logging.DEBUG)
@@ -13,7 +14,7 @@ MASLO_URL = "/podsolnechnoe-maslo/"
 
 g = grab.Grab()
 g.setup(user_agent_file = 'useragents.txt', connect_timeout = 1, timeout = 3) # fuck this pidars inda ass with their bans
-g.proxylist.load_file('proxies.txt') # fuck this pidars inda ass with their bans
+g.proxylist.load_file('proxies.txt') # fuck this pidars inda ass with their bans (https://www.proxy-list.download/HTTP)
 
 
 def grab_go(url):
@@ -35,26 +36,37 @@ def get_first_city_page():
     grab_go(city_url)
     city_selector = g.doc.select('//body/li/a')
     city_info = {}
-    for city in city_selector:
+    bar = progressbar.ProgressBar(widgets = ['Scaning cities: ', progressbar.Percentage(), ' ', progressbar.Bar(), ' ', progressbar.ETA()], maxval = len(city_selector) - 1)
+    bar.start()
+    for i, city in enumerate(city_selector):
+        bar.update(i)
         city_info[city.text()] = [ city.attr('href') ]
+    bar.finish()
     logger_agroserver.debug('get_first_city_page() return:\n{0}'.format(city_info))
     return city_info
 
 def get_all_city_pages():
     city_info = get_first_city_page()
-    for name, first_city_page in city_info.items():
+    bar = progressbar.ProgressBar(widgets = ['Collecting all URLs: ', progressbar.Percentage(), ' ', progressbar.Bar(), ' ', progressbar.ETA()], maxval = len(city_info) - 1)
+    bar.start()
+    for i, (name, first_city_page) in enumerate(city_info.items()):
+        bar.update(i)
         first_city_page_url = MAIN_URL + first_city_page[0]
         grab_go(first_city_page_url)
         city_page_selector = g.doc.select('//ul[@class="pg"]/li/a')
         for city_page in city_page_selector:
             city_info[name].append(MASLO_URL + city_page.attr('href'))
+    bar.finish()
     logger_agroserver.debug('get_all_city_pages() return:\n{0}'.format(city_info))
     return city_info
     
 def get_all_city_prices():
     city_info = get_all_city_pages()
     all_city_prices = {}
-    for name, city_pages in city_info.items():
+    bar = progressbar.ProgressBar(widgets = ['Collecting all topics and prices: ', progressbar.Percentage(), ' ', progressbar.Bar(), ' ', progressbar.ETA()], maxval = len(city_info) - 1)
+    bar.start()
+    for i, (name, city_pages) in enumerate(city_info.items()):
+        bar.update(i)
         city_prices_value = {}
         for city_page in city_pages:
             city_page_url = MAIN_URL + city_page
@@ -73,6 +85,7 @@ def get_all_city_prices():
                 except:
                     logger_agroserver.warn('No price specified for topic "{0}", skipping'.format(tovar_topic))
         all_city_prices[name] = city_prices_value
+    bar.finish()
     logger_agroserver.debug('get_all_city_prices() return:\n{0}'.format(all_city_prices))
     return all_city_prices
 
@@ -85,7 +98,10 @@ def write_xlsx():
     worksheet.set_column(2, 2, 20)
     row = 0
     col = 0
-    for city, value in all_city_prices.items():
+    bar = progressbar.ProgressBar(widgets = ['Writing to file: ', progressbar.Percentage(), ' ', progressbar.Bar(), ' ', progressbar.ETA()], maxval = len(all_city_prices) - 1)
+    bar.start()
+    for i, (city, value) in enumerate(all_city_prices.items()):
+        bar.update(i)
         row += 1
         worksheet.write(row, col, city)
         for topic, price in value.items():
@@ -93,10 +109,14 @@ def write_xlsx():
             worksheet.write(row, col + 2, price)
             row += 1
     workbook.close()
+    bar.finish()
 
 def main():
     write_xlsx()
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        logger_agroserver.info('Stopped by user')
