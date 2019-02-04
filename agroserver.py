@@ -94,7 +94,7 @@ def write_xlsx():
     workbook = xlsxwriter.Workbook('prices.xlsx')
     worksheet = workbook.add_worksheet()
     worksheet.set_column(0, 0, 15)
-    worksheet.set_column(1, 1, 60)
+    worksheet.set_column(1, 1, 70)
     worksheet.set_column(2, 2, 20)
     row = 0
     col = 0
@@ -112,7 +112,9 @@ def write_xlsx():
     bar.finish()
 
 def main():
-    write_xlsx()
+    logger_agroserver.info('Init')
+    if write_xlsx():
+        logger_agroserver.info('Done')
 
 
 if __name__ == '__main__':
