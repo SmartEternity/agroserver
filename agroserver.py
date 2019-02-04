@@ -80,6 +80,9 @@ def write_xlsx():
     all_city_prices = get_all_city_prices()
     workbook = xlsxwriter.Workbook('prices.xlsx')
     worksheet = workbook.add_worksheet()
+    worksheet.set_column(0, 0, 15)
+    worksheet.set_column(1, 1, 60)
+    worksheet.set_column(2, 2, 20)
     row = 0
     col = 0
     for city, value in all_city_prices.items():
