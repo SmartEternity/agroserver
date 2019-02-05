@@ -79,12 +79,14 @@ def get_all_city_prices():
             for index, tovar in enumerate(tovar_selector, 1):
                 try:
                     tovar_topic = g.doc.select('//div[@class="line"][' + str(index) + ']//div[@class="th"]').text()
+                    tovar_path = g.doc.select('//div[@class="line"][' + str(index) + ']//div[@class="th"]/a').attr('href')
                     tovar_price = g.doc.select('//div[@class="line"][' + str(index) + ']//div[@class="price"]').text()
                     if tovar_topic in city_prices_value:
-                        city_prices_value[tovar_topic + ' (' + str(duplicate_num) + ')' ] = tovar_price
+                        tovar_topic = tovar_topic + ' (' + str(duplicate_num) + ')'
                         duplicate_num += 1
-                    else:
-                        city_prices_value[tovar_topic] = tovar_price
+                    city_prices_value[tovar_topic] = {}
+                    city_prices_value[tovar_topic]['price'] = tovar_price
+                    city_prices_value[tovar_topic]['url'] = MAIN_URL + tovar_path
                 except:
                     logger_agroserver.warn('No price specified for topic "{0}", skipping'.format(tovar_topic))
         all_city_prices[name] = city_prices_value
@@ -94,11 +96,13 @@ def get_all_city_prices():
 
 def write_xlsx():
     all_city_prices = get_all_city_prices()
-    workbook = xlsxwriter.Workbook('prices.xlsx')
+    TOVAR_NAME = TOVAR_PATH.replace('/', '')
+    workbook = xlsxwriter.Workbook('prices_' + TOVAR_NAME + '.xlsx')
     worksheet = workbook.add_worksheet()
     worksheet.set_column(0, 0, 15)
     worksheet.set_column(1, 1, 70)
     worksheet.set_column(2, 2, 20)
+    worksheet.set_column(3, 3, 70)
     row = 0
     col = 0
     bar = progressbar.ProgressBar(widgets = ['Writing to file: ', progressbar.Percentage(), ' ', progressbar.Bar(), ' ', progressbar.ETA()], maxval = len(all_city_prices) - 1)
@@ -107,9 +111,10 @@ def write_xlsx():
         bar.update(i)
         row += 1
         worksheet.write(row, col, city)
-        for topic, price in value.items():
+        for topic, args in value.items():
             worksheet.write(row, col + 1, topic)
-            worksheet.write(row, col + 2, price)
+            worksheet.write(row, col + 2, args['price'])
+            worksheet.write(row, col + 3, args['url'])
             row += 1
     workbook.close()
     bar.finish()
