@@ -10,10 +10,10 @@ logging.basicConfig(filename = 'agroserver.log', format = '%(asctime)s %(levelna
 logger_agroserver = logging.getLogger("agroserver")
 
 MAIN_URL = 'https://agroserver.ru'
-#TOVAR_PATH = "/podsolnechnoe-maslo/"
-#AJAX_CITY_PATH = '/b/ajax/show_city_592_0/0.7446588268458556' # maslo
-TOVAR_PATH = '/podsolnechnik/'
-AJAX_CITY_PATH = '/b/ajax/show_city_195_0/0.940598325061625' # podsolnuh
+TOVAR_PATH = "/podsolnechnoe-maslo/"
+AJAX_CITY_PATH = '/b/ajax/show_city_592_0/0.7446588268458556' # maslo
+#TOVAR_PATH = '/podsolnechnik/'
+#AJAX_CITY_PATH = '/b/ajax/show_city_195_0/0.940598325061625' # podsolnuh
 
 g = grab.Grab()
 g.setup(user_agent_file = 'useragents.txt', connect_timeout = 1, timeout = 3) # fuck this pidars inda ass with their bans
@@ -96,34 +96,44 @@ def get_all_city_prices():
 
 def write_xlsx():
     all_city_prices = get_all_city_prices()
-    TOVAR_NAME = TOVAR_PATH.replace('/', '')
-    workbook = xlsxwriter.Workbook('prices_' + TOVAR_NAME + '.xlsx')
-    worksheet = workbook.add_worksheet()
-    worksheet.set_column(0, 0, 15)
-    worksheet.set_column(1, 1, 70)
-    worksheet.set_column(2, 2, 20)
-    worksheet.set_column(3, 3, 70)
-    row = 0
-    col = 0
-    bar = progressbar.ProgressBar(widgets = ['Writing to file: ', progressbar.Percentage(), ' ', progressbar.Bar(), ' ', progressbar.ETA()], maxval = len(all_city_prices) - 1)
-    bar.start()
-    for i, (city, value) in enumerate(all_city_prices.items()):
-        bar.update(i)
-        row += 1
-        worksheet.write(row, col, city)
-        for topic, args in value.items():
-            worksheet.write(row, col + 1, topic)
-            worksheet.write(row, col + 2, args['price'])
-            worksheet.write(row, col + 3, args['url'])
+    try:
+        TOVAR_NAME = TOVAR_PATH.replace('/', '')
+        workbook = xlsxwriter.Workbook('prices_' + TOVAR_NAME + '.xlsx')
+        worksheet = workbook.add_worksheet()
+        worksheet.set_column(0, 0, 15)
+        worksheet.set_column(1, 1, 70)
+        worksheet.set_column(2, 2, 20)
+        worksheet.set_column(3, 3, 70)
+        row = 0
+        col = 0
+        bar = progressbar.ProgressBar(widgets = ['Writing to file: ', progressbar.Percentage(), ' ', progressbar.Bar(), ' ', progressbar.ETA()], maxval = len(all_city_prices) - 1)
+        bar.start()
+        for i, (city, value) in enumerate(all_city_prices.items()):
+            bar.update(i)
             row += 1
-    workbook.close()
-    bar.finish()
-    return True
+            worksheet.write(row, col, city)
+            for topic, args in value.items():
+                worksheet.write(row, col + 1, topic)
+                worksheet.write(row, col + 2, args['price'])
+                worksheet.write(row, col + 3, args['url'])
+                row += 1
+        workbook.close()
+        bar.finish()
+        return True
+    except Exception as e:
+        logger_agroserver.fatal('Can not write file, error message: {0}'.format(e))
+        return False
+    
 
 def main():
     logger_agroserver.info('Init')
+    print('Init')
     if write_xlsx():
         logger_agroserver.info('Done')
+        print('Done')
+    else:
+        logger_agroserver.fatal('Fatal error')
+        print('Fatal error')
 
 
 if __name__ == '__main__':
@@ -131,3 +141,4 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         logger_agroserver.info('Stopped by user')
+        print('Stopped by user')
