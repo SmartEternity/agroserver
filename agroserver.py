@@ -10,7 +10,10 @@ logging.basicConfig(filename = 'agroserver.log', format = '%(asctime)s %(levelna
 logger_agroserver = logging.getLogger("agroserver")
 
 MAIN_URL = 'https://agroserver.ru'
-MASLO_URL = "/podsolnechnoe-maslo/"
+#TOVAR_PATH = "/podsolnechnoe-maslo/"
+#AJAX_CITY_PATH = '/b/ajax/show_city_592_0/0.7446588268458556' # maslo
+TOVAR_PATH = '/podsolnechnik/'
+AJAX_CITY_PATH = '/b/ajax/show_city_195_0/0.940598325061625' # podsolnuh
 
 g = grab.Grab()
 g.setup(user_agent_file = 'useragents.txt', connect_timeout = 1, timeout = 3) # fuck this pidars inda ass with their bans
@@ -32,7 +35,7 @@ def grab_go(url):
             logger_agroserver.warn('Retrying url: {0}'.format(url))
 
 def get_first_city_page():
-    city_url = MAIN_URL + '/b/ajax/show_city_592_0/0.7446588268458556'
+    city_url = MAIN_URL + AJAX_CITY_PATH
     grab_go(city_url)
     city_selector = g.doc.select('//body/li/a')
     city_info = {}
@@ -55,7 +58,7 @@ def get_all_city_pages():
         grab_go(first_city_page_url)
         city_page_selector = g.doc.select('//ul[@class="pg"]/li/a')
         for city_page in city_page_selector:
-            city_info[name].append(MASLO_URL + city_page.attr('href'))
+            city_info[name].append(TOVAR_PATH + city_page.attr('href'))
     bar.finish()
     logger_agroserver.debug('get_all_city_pages() return:\n{0}'.format(city_info))
     return city_info
@@ -110,6 +113,7 @@ def write_xlsx():
             row += 1
     workbook.close()
     bar.finish()
+    return True
 
 def main():
     logger_agroserver.info('Init')
