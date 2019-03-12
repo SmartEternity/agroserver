@@ -4,6 +4,7 @@ import time
 import logging
 import xlsxwriter
 import progressbar
+import sys
 
 
 logging.basicConfig(filename = 'agroserver.log', format = '%(asctime)s %(levelname)s %(message)s', level = logging.DEBUG)
@@ -31,8 +32,7 @@ def grab_go(url):
             logger_agroserver.debug('Response body:\n{0}'.format(g.doc.body))
             break
         except Exception as e:
-            logger_agroserver.debug('Error message: {0}'.format(e))
-            logger_agroserver.warn('Retrying url: {0}'.format(url))
+            logger_agroserver.warn('{0}, retrying url: {1}'.format(e, url))
 
 def get_first_city_page():
     city_url = MAIN_URL + AJAX_CITY_PATH
@@ -121,10 +121,9 @@ def write_xlsx():
         bar.finish()
         return True
     except Exception as e:
-        logger_agroserver.fatal('Can not write file, error message: {0}'.format(e))
+        logger_agroserver.fatal(e)
         return False
     
-
 def main():
     logger_agroserver.info('Init')
     print('Init')
@@ -133,7 +132,7 @@ def main():
         print('Done')
     else:
         logger_agroserver.fatal('Fatal error')
-        print('Fatal error')
+        sys.exit('Fatal error')
 
 
 if __name__ == '__main__':
@@ -142,4 +141,3 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         logger_agroserver.info('Stopped by user')
         print('Stopped by user')
-        
